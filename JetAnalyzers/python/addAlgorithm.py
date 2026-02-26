@@ -17,6 +17,7 @@ partons = cms.EDProducer('PartonSelector',
 from JetMETAnalysisMCtruth.JetAnalyzers.JetReconstruction_cff import *
 from JetMETAnalysisMCtruth.JetAnalyzers.TauReconstruction_cff import *
 from JetMETAnalysisMCtruth.JetAnalyzers.JPTReconstruction_cff import *
+#from JetMETAnalysisMCtruth.JetAnalyzers.ScoutingJetReconstruction_cff import *
 from JetMETAnalysisMCtruth.JetAnalyzers.JetCorrection_cff     import *
 from RecoTauTag.RecoTau.tauDecayModes_cfi          import *
 from JetMETAnalysisMCtruth.JetAnalyzers.customizePuppiTune_cff_V15 import * #customized config (recipe) to apply on top of the main config so as to use the V15 tune
@@ -150,6 +151,15 @@ for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
     elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
         recJetsDict[tauDiscriminator_and_DecayMode] = recJetsDict["ak5tauTaNCall"]
 
+## Extra Scouting Collections
+stdGenJetsDict['ak4scouting']     = 'slimmedGenJets'
+genJetsDict['ak4scouting']        = ('ak4GenJetsNoNu',      ak4GenJetsNoNu)
+stdRecJetsDict['ak4scouting']     = 'ak4ScoutingJets' # 'hltScoutingPFPacker' # name after converting to reco::PFJet
+recJetsDict['ak4scouting']        = ('ak4ScoutingJets',     ak4PFJets)
+#recJetsDict['ak4scouting']        = ('ak4ScoutingJets',     ak4ScoutingJets)
+#corrJetsDict['ak4jptl1']     = ('ak4JPTJetsL1',         ak4JPTJetsL1)
+#corrJetsDict['ak4jptl2l3']   = ('ak4JPTJetsL2L3',       ak4JPTJetsL2L3)
+#corrJetsDict['ak4jptl1l2l3'] = ('ak4JPTJetsL1FastL2L3', ak4JPTJetsL1FastL2L3)
 
 ################################################################################
 ## addAlgorithm
@@ -229,8 +239,12 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('trk')]
         type          = 'Track'
         alg_size_type = alg_size + 'trk'
+    elif (alg_size_type_corr.find('scouting') > 0):
+        alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('scouting')]
+        type          = 'Scouting'
+        alg_size_type = alg_size + "scouting"
     else:
-        raise ValueError("Can't identify valid jet type: calo|caloHLT|pf|pfchs|pfHLT|jpt|trk|tau|puppi")
+        raise ValueError("Can't identify valid jet type: calo|caloHLT|pf|pfchs|pfHLT|jpt|trk|tau|puppi|scouting")
         
     if (alg_size_type_corr.find('l1') > 0):
         correctl1 = True
@@ -277,6 +291,11 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     )
     if not reco:
         jetPtEta.src = stdRecJetsDict[alg_size_type]
+    #if type == "Scouting" and not reco:
+    #    jetPtEta = cms.EDFilter('EtaPtMinRun3ScoutingPFJetViewRefSelector',
+    #        Defaults.JetPtEta,
+    #        src = cms.InputTag(stdRecJetsDict[alg_size_type])
+    #    )
     setattr(process, alg_size_type_corr + 'PtEta', jetPtEta)
     
     ## create the sequence
@@ -504,8 +523,20 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         srcGen = cms.InputTag(refPtEta.label()),
         srcRec = cms.InputTag(jetPtEta.label())
     )
+    #if type == "Scouting" and not reco:
+    #    jetToRef = cms.EDProducer("MatchRun3ScoutingPFJetToRecoCandidate",
+    #        srcGen = cms.InputTag(refPtEta.label()),
+    #        srcRec = cms.InputTag(jetPtEta.label())
+    #    )
     setattr(process,alg_size_type_corr + 'JetToRef', jetToRef)
     sequence = cms.Sequence(sequence * jetToRef)
+
+    if type == "Scouting" and not reco:
+        ak4ScoutingJets = cms.EDProducer("Run3ScoutingPFJetToRecoPFJetProducer",
+                scoutingPFJet = cms.InputTag("hltScoutingPFPacker"),
+                )
+        setattr(process, stdRecJetsDict['ak4scouting'], ak4ScoutingJets)
+        sequence = cms.Sequence(ak4ScoutingJets * sequence)
 
 	##############################
     jetToUncorJet = cms.EDProducer('MatchRecToGen',
@@ -591,6 +622,9 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         jra.srcPFCandidates = cms.InputTag('puppi')
     elif type == 'JPT':
         jra.srcRho = cms.InputTag("fixedGridRhoFastjetAllCalo")
+    elif type == 'SCOUTING':
+        jra.srcRho = cms.InputTag("hltScoutingPFPacker", "rho")
+        jra.srcVtx = cms.InputTag("hltScoutingPrimaryVertexPacker", "primaryVtx")
 
     if correctl1 or correctl2l3:
         jra.jecLabel = corrJets.correctors[0].replace("Corrector","")

@@ -8,6 +8,8 @@
 #include "CommonTools/UtilAlgos/interface/EtaRangeSelector.h"
 #include "CommonTools/UtilAlgos/interface/AndSelector.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
+#include "DataFormats/Scouting/interface/Run3ScoutingPFJet.h"
+#include "DataFormats/Scouting/interface/Run3ScoutingParticle.h"
 
 typedef SingleObjectSelector<
   edm::View<reco::Candidate>,
@@ -16,3 +18,19 @@ typedef SingleObjectSelector<
 EtaPtMinCandViewRefSelector;
 
 DEFINE_FWK_MODULE(EtaPtMinCandViewRefSelector);
+
+typedef SingleObjectSelector<
+  edm::View<Run3ScoutingPFJet>,
+  AndSelector<PtMinSelector, EtaRangeSelector>
+>
+EtaPtMinRun3ScoutingPFJetViewRefSelector;
+
+DEFINE_FWK_MODULE(EtaPtMinRun3ScoutingPFJetViewRefSelector);
+
+typedef SingleObjectSelector<
+  edm::View<Run3ScoutingParticle>,
+  AndSelector<PtMinSelector, EtaRangeSelector>
+>
+EtaPtMinRun3ScoutingParticleViewRefSelector;
+
+DEFINE_FWK_MODULE(EtaPtMinRun3ScoutingParticleViewRefSelector);

@@ -83,7 +83,7 @@ private:
   // typdefs
   typedef set<unsigned int>                                       IndexSet_t;
   typedef IndexSet_t::const_iterator                              IndexIter_t;
-  typedef set<Match_t,MatchLtComp>                                MatchSet_t;
+  typedef multiset<Match_t,MatchLtComp>                           MatchSet_t;
   typedef MatchSet_t::const_iterator                              MatchIter_t;
 
 };
@@ -127,8 +127,10 @@ void MatchRecToGen::produce(edm::Event& iEvent,const edm::EventSetup& iSetup)
   iEvent.getByToken(srcRec_,rec_);
   iEvent.getByToken(srcGen_,gen_);
   
-  nRec = std::min((size_t)rec_->size(),(size_t)100);
-  nGen = std::min((size_t)gen_->size(),(size_t)100);
+  //nRec = std::min((size_t)rec_->size(),(size_t)100);
+  //nGen = std::min((size_t)gen_->size(),(size_t)100);
+  nRec = (size_t)rec_->size();
+  nGen = (size_t)gen_->size();
   
 /*  if(nGen<=30 && nRec<=30 && gen_->at(0).pt()<1000){
   cout << "event = " << iEvent.id().event() << endl;
@@ -173,6 +175,8 @@ void MatchRecToGen::produce(edm::Event& iEvent,const edm::EventSetup& iSetup)
       //cout << "DR = " << deltaR << " , iRec = " << iRec << " , iGen = " << iGen << endl;
     }
   }
+
+  //cout << moduleName_ << " matchSet size: " << matchSet.size() << " nRec: " << nRec << " nGen: " << nGen << " nRec*nGen:" << nRec*nGen << endl;
   
   // two association maps: rec2gen and gen2rec
   // First check is a blank association map should be put into the event

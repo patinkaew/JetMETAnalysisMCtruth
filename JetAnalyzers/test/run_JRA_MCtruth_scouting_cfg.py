@@ -22,8 +22,8 @@ if doProducer:
 # Size options: integers 1-10
 # Jet type options: calo, pf, pfchs, puppi
 # Correction levels: '' (blank), l1, l2, l3, l2l3, l1l2l3
-algsizetype = {'ak':[4,8]}
-jettype = ['puppi','pfchs']
+algsizetype = {}
+jettype = []
 corrs = ['']
 
 algorithms = []
@@ -41,7 +41,7 @@ for k, v in algsizetype.items():
 					label= cms.untracked.string(upperAlg)))
 
 # If need be you can append additional jet collections using the style below
-#algorithms.append('ak5calo')
+algorithms.append('ak4scouting')
 
 
 #!
@@ -66,7 +66,7 @@ if conditionsSource != "GT":
 #!
 #! INPUT
 #!
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(10))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
 ##############################################
 # External Input File (most likely from DAS) #
@@ -76,7 +76,7 @@ try:
 except ImportError:
     print ("Couldn't open the external list of files from DAS. If you just checkout out the JetResponseAnalyzer package you will need to make this file yourself. Currently Falling back to opening the list hard-coded in run_JRA_cfg.py. This is not a bad action as long as it is what you intended to have happen.")
     inputFiles = cms.untracked.vstring(
-		'root://cms-xrd-global.cern.ch//store/mc/Run3Summer23MiniAODv4/QCD_PT-15to7000_TuneCP5_13p6TeV_pythia8/MINIAODSIM/FlatPU0to70_castor_130X_mcRun3_2023_realistic_v14-v1/2550000/079aba26-165d-4926-b022-a26790084b55.root'
+        'root://cms-xrd-global.cern.ch:///store/mc/RunIII2024Summer24MiniAOD/QCD_Bin-PT-15to7000_Par-PT-flat2022_TuneCP5_13p6TeV_pythia8/MINIAODSIM/140X_mcRun3_2024_realistic_v26-v2/100000/0043accc-b4d8-49fe-b4d9-b60aedf47308.root'
 	    )
     process.source = cms.Source("PoolSource", fileNames = inputFiles )
 
@@ -122,6 +122,10 @@ for algorithm in algorithms:
         process.load("Configuration.Geometry.GeometryIdeal_cff")
         process.load("Configuration.StandardSequences.MagneticField_cff")
         addAlgorithm(process,algorithm,Defaults,False,doProducer)
+    elif (algorithm.find('scouting') > 0) :
+        process.load("Configuration.Geometry.GeometryIdeal_cff")
+        process.load("Configuration.StandardSequences.MagneticField_cff")
+        addAlgorithm(process,algorithm,Defaults,False,doProducer)
     else:
         addAlgorithm(process,algorithm,Defaults,doJetReco,doProducer)
     outCom.extend(['keep *_'+algorithm+'_*_*'])
@@ -154,5 +158,5 @@ if doProducer:
 #Not sure what this does
 #processDumpFile = open('runJRA.dump' , 'w')
 #print >> processDumpFile, process.dumpPython()
-process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
+#process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 process.options.allowUnscheduled = cms.untracked.bool(True)
